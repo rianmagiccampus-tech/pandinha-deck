@@ -5,15 +5,29 @@
     <title>OBS Audio Receiver</title>
     <script src="/socket.io/socket.io.js"></script>
 </head>
-<body style="background: transparent; margin: 0; overflow: hidden;">
+<body style="background: transparent; margin: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; height: 100vh;">
+    <div id="status" style="color: #a855f7; font-family: monospace; font-size: 14px; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 8px;">
+        Pandinha Deck OBS Conectado 🐼
+    </div>
+    
+    <!-- Elemento de áudio fixo no HTML para burlar o bloqueio do navegador -->
+    <audio id="audio-player"></audio>
+
     <script>
         const socket = io();
+        const player = document.getElementById('audio-player');
 
-        // Quando receber o aviso do servidor que um botão foi apertado no celular
+        socket.on('connect', () => {
+            console.log("Conectado ao servidor de tempo real!");
+        });
+
+        // Quando o botão for apertado no telemóvel
         socket.on('disparar-som', (audioUrl) => {
-            const audio = new Audio(audioUrl);
-            audio.volume = 1.0;
-            audio.play().catch(err => console.log("Erro ao reproduzir no OBS:", err));
+            player.src = audioUrl;
+            player.volume = 1.0;
+            player.play().catch(err => {
+                console.log("Bloqueio de autoplay detetado. A tentar forçar reprodução...", err);
+            });
         });
     </script>
 </body>
