@@ -5,26 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title id="page-title">Pandinha Deck</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <style>
         body { -webkit-tap-highlight-color: transparent; }
-        .neon-glow {
-            box-shadow: 0 0 20px rgba(168, 85, 247, 0.35);
-        }
-        .neon-glow-active {
-            box-shadow: 0 0 25px rgba(236, 72, 153, 0.7);
-        }
-        #bg-container {
-            background-size: cover;
-            background-position: center;
-            background-attachment: fixed;
-        }
+        .neon-glow { box-shadow: 0 0 20px rgba(168, 85, 247, 0.35); }
+        .neon-glow-active { box-shadow: 0 0 25px rgba(236, 72, 153, 0.7); }
+        #bg-container { background-size: cover; background-position: center; background-attachment: fixed; }
     </style>
 </head>
 <body id="bg-container" class="bg-slate-950 text-white min-h-screen select-none flex flex-col justify-between pb-8 relative transition-all duration-500">
     
     <div class="absolute inset-0 bg-slate-950/85 backdrop-blur-[3px] -z-10"></div>
 
-    <!-- Menu Lateral (Drawer Esquerdo) -->
     <div id="side-menu" class="fixed inset-y-0 left-0 w-80 bg-slate-900/95 border-r border-purple-500/30 backdrop-blur-xl z-50 transform -translate-x-full transition-transform duration-300 flex flex-col justify-between p-6 shadow-2xl overflow-y-auto">
         <div class="space-y-6">
             <div class="flex justify-between items-center border-b border-slate-800 pb-4">
@@ -35,7 +27,6 @@
                 <button onclick="toggleMenu(false)" class="bg-slate-800 hover:bg-slate-700 text-slate-300 w-8 h-8 rounded-xl flex items-center justify-center font-bold">✕</button>
             </div>
 
-            <!-- Alterar Nome do App -->
             <div class="space-y-2">
                 <label class="block text-xs font-bold text-purple-300 uppercase tracking-wider">Nome da Ferramenta</label>
                 <div class="flex gap-2">
@@ -44,29 +35,21 @@
                 </div>
             </div>
 
-            <!-- Papel de Parede (Upload de Arquivo ou Link) -->
             <div class="space-y-3 pt-2 border-t border-slate-800">
                 <label class="block text-xs font-bold text-purple-300 uppercase tracking-wider">Papel de Parede</label>
-                
-                <!-- Upload de Imagem do Celular/PC -->
                 <div class="space-y-1.5">
                     <span class="text-[11px] text-slate-400 font-medium">Enviar imagem do dispositivo:</span>
                     <input type="file" id="bg-file-input" accept="image/*" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-slate-400 text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer">
                     <button onclick="salvarWallpaperArquivo()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 py-2.5 rounded-xl font-black text-xs shadow-lg shadow-purple-600/30 transition">Aplicar Imagem Enviada</button>
                 </div>
-
                 <div class="text-center text-[10px] text-slate-500 uppercase font-bold my-1">— OU VIA LINK —</div>
-
-                <!-- Link de Imagem -->
                 <div class="space-y-1.5">
                     <input type="text" id="input-bg-url" placeholder="https://exemplo.com/imagem.jpg" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-purple-500 font-medium">
                     <button onclick="salvarWallpaperLink()" class="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-xl font-bold text-xs text-purple-300 border border-purple-500/30">Aplicar por Link</button>
                 </div>
-
                 <button onclick="removerWallpaper()" class="w-full bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white py-2 rounded-xl font-bold text-xs border border-red-500/20 transition mt-2">Remover Papel de Parede</button>
             </div>
         </div>
-
         <div class="text-center text-[10px] text-slate-500 font-bold uppercase tracking-widest pt-4 border-t border-slate-800 mt-6">
             Pandinha Studio • Live Edition
         </div>
@@ -74,7 +57,6 @@
 
     <div id="menu-overlay" onclick="toggleMenu(false)" class="fixed inset-0 bg-black/60 backdrop-blur-sm hidden z-40 transition-opacity"></div>
 
-    <!-- Topo / Header -->
     <header class="bg-slate-900/60 backdrop-blur-md border-b border-purple-500/20 px-4 py-3.5 sticky top-0 z-30 flex justify-between items-center shadow-lg">
         <div class="flex items-center gap-3">
             <button onclick="toggleMenu(true)" class="bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 p-2.5 rounded-xl transition text-purple-400 shadow-md">
@@ -87,56 +69,36 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <button onclick="toggleEditMode()" id="btn-edit" class="bg-slate-800/80 hover:bg-slate-700 border border-slate-700 p-2.5 rounded-xl transition text-slate-300 shadow-md">
-                ✏️
-            </button>
-            <button onclick="openModal(true)" class="bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:opacity-95 px-4 py-2.5 rounded-xl font-black text-xs tracking-wider shadow-lg shadow-purple-600/40 transition active:scale-95 uppercase border border-purple-400/30">
-                + Novo
-            </button>
+            <button onclick="toggleEditMode()" id="btn-edit" class="bg-slate-800/80 hover:bg-slate-700 border border-slate-700 p-2.5 rounded-xl transition text-slate-300 shadow-md">✏️</button>
+            <button onclick="openModal(true)" class="bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 hover:opacity-95 px-4 py-2.5 rounded-xl font-black text-xs tracking-wider shadow-lg shadow-purple-600/40 transition active:scale-95 uppercase border border-purple-400/30">+ Novo</button>
         </div>
     </header>
 
-    <!-- Barra de Volume Neon -->
-    <div class="px-4 py-3 bg-slate-900/40 backdrop-blur-sm border-b border-slate-800/60 flex items-center gap-3 max-w-md mx-auto w-full">
-        <span class="text-lg" id="vol-icon">🔊</span>
-        <div class="flex-1">
-            <div class="flex justify-between text-[11px] text-purple-300 font-black mb-1 tracking-wider">
-                <span>VOLUME GERAL</span>
-                <span id="vol-text" class="text-pink-400 font-mono">100%</span>
-            </div>
-            <input type="range" id="master-volume" min="0" max="1" step="0.01" value="1" oninput="changeVolume(this.value)" class="w-full accent-pink-500 bg-slate-800 rounded-lg h-2 cursor-pointer shadow-inner">
-        </div>
-    </div>
-
-    <!-- Área Principal de Botões -->
     <main class="flex-1 max-w-md mx-auto w-full p-4">
-        <div id="grid-audios" class="grid grid-cols-2 gap-4">
-            <!-- Os botões aparecem aqui dinamicamente -->
-        </div>
+        <div id="grid-audios" class="grid grid-cols-2 gap-4"></div>
     </main>
 
-    <!-- Modal de Cadastro de Áudio -->
+    <!-- Modais de Cadastro e Edição (mesma estrutura anterior) -->
     <div id="modal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900/95 border border-purple-500/40 w-full max-w-sm p-6 rounded-3xl shadow-2xl space-y-4 neon-glow">
             <h2 class="text-xl font-black text-purple-300 flex items-center gap-2">🎵 Novo Áudio</h2>
             <form id="form-audio" onsubmit="salvarAudio(event)" class="space-y-4">
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Nome do Botão</label>
-                    <input type="text" id="audio-name" required placeholder="Ex: Risada, É o Tchan..." class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-white focus:outline-none focus:border-purple-500 font-medium">
+                    <input type="text" id="audio-name" required placeholder="Ex: Risada..." class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-white focus:outline-none focus:border-purple-500 font-medium">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Arquivo de Áudio (.mp3 / .wav)</label>
                     <input type="file" id="audio-file" accept="audio/*" required class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-2.5 text-slate-400 text-xs file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer">
                 </div>
                 <div class="flex gap-2 pt-2">
-                    <button type="button" onclick="openModal(false)" class="flex-1 bg-slate-800 hover:bg-slate-700 py-3 rounded-2xl font-bold text-sm transition">Cancelar</button>
-                    <button type="submit" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-purple-600/30 transition">Salvar</button>
+                    <button type="button" onclick="openModal(false)" class="flex-1 bg-slate-800 py-3 rounded-2xl font-bold text-sm">Cancelar</button>
+                    <button type="submit" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-2xl font-bold text-sm shadow-lg">Salvar</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal de Edição -->
     <div id="modal-edit" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900/95 border border-pink-500/40 w-full max-w-sm p-6 rounded-3xl shadow-2xl space-y-4 neon-glow-active">
             <h2 class="text-xl font-black text-pink-400">✏️ Editar Botão</h2>
@@ -146,27 +108,23 @@
                     <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Novo Nome</label>
                     <input type="text" id="edit-name" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-white focus:outline-none focus:border-pink-500 font-medium">
                 </div>
-                
                 <div class="grid grid-cols-2 gap-2 pt-2">
-                    <button type="button" onclick="moverAudio(-1)" class="bg-slate-800 hover:bg-slate-700 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1">⬅️ Mover Esq</button>
-                    <button type="button" onclick="moverAudio(1)" class="bg-slate-800 hover:bg-slate-700 py-2.5 rounded-xl font-bold text-xs flex items-center justify-center gap-1">Mover Dir ➡️</button>
+                    <button type="button" onclick="moverAudio(-1)" class="bg-slate-800 py-2.5 rounded-xl font-bold text-xs">⬅️ Mover Esq</button>
+                    <button type="button" onclick="moverAudio(1)" class="bg-slate-800 py-2.5 rounded-xl font-bold text-xs">Mover Dir ➡️</button>
                 </div>
-
-                <button type="button" onclick="deletarAudioAtual()" class="w-full bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white py-3 rounded-2xl font-bold text-xs border border-red-500/30 transition">
-                    🗑️ Excluir Este Áudio
-                </button>
+                <button type="button" onclick="deletarAudioAtual()" class="w-full bg-red-600/20 hover:bg-red-600 text-red-400 hover:text-white py-3 rounded-2xl font-bold text-xs border border-red-500/30 transition">🗑️ Excluir</button>
             </div>
             <div class="flex gap-2 pt-2">
                 <button type="button" onclick="closeEditModal()" class="flex-1 bg-slate-800 py-3 rounded-2xl font-bold text-sm">Cancelar</button>
-                <button type="button" onclick="salvarEdicaoItem()" class="flex-1 bg-pink-600 hover:bg-pink-500 py-3 rounded-2xl font-bold text-sm shadow-lg shadow-pink-600/30">Salvar</button>
+                <button type="button" onclick="salvarEdicaoItem()" class="flex-1 bg-pink-600 py-3 rounded-2xl font-bold text-sm">Salvar</button>
             </div>
         </div>
     </div>
 
     <script>
+        const socket = io();
         let audiosList = [];
         let isEditMode = false;
-        let masterVolume = 1.0;
 
         async function carregarTudo() {
             try {
@@ -175,143 +133,93 @@
                 document.getElementById('app-title-display').innerText = settings.title;
                 document.getElementById('page-title').innerText = settings.title;
                 document.getElementById('input-app-title').value = settings.title;
-                
                 if(settings.background) {
                     document.getElementById('bg-container').style.backgroundImage = `url('${settings.background}')`;
                     document.getElementById('input-bg-url').value = settings.background.startsWith('http') ? settings.background : '';
                 } else {
                     document.getElementById('bg-container').style.backgroundImage = 'none';
                 }
-
                 const resAud = await fetch('/api/audios');
                 audiosList = await resAud.json();
                 renderGrid();
-            } catch (e) {
-                console.log("Erro ao carregar dados:", e);
-            }
+            } catch (e) { console.log(e); }
         }
 
         function renderGrid() {
             const grid = document.getElementById('grid-audios');
             grid.innerHTML = '';
-
             if (audiosList.length === 0) {
-                grid.innerHTML = '<div class="col-span-full text-center text-slate-400 py-16 text-sm font-medium bg-slate-900/60 rounded-3xl border border-slate-800/80 backdrop-blur-md">Nenhum áudio cadastrado.<br>Abra o menu ou clique em "+ Novo" no topo!</div>';
+                grid.innerHTML = '<div class="col-span-full text-center text-slate-400 py-16 text-sm font-medium bg-slate-900/60 rounded-3xl border border-slate-800/80 backdrop-blur-md">Nenhum áudio cadastrado.<br>Abra o menu ou clique em "+ Novo"!</div>';
                 return;
             }
-
             audiosList.forEach((audio) => {
                 const card = document.createElement('div');
-                card.className = `relative bg-gradient-to-b from-slate-900/90 to-slate-950/90 backdrop-blur-md border ${isEditMode ? 'border-pink-500 animate-pulse neon-glow-active' : 'border-purple-500/30 hover:border-purple-500 neon-glow'} p-4 rounded-3xl flex flex-col justify-between items-center text-center shadow-xl transition active:scale-95 cursor-pointer h-32`;
+                card.className = `relative bg-gradient-to-b from-slate-900/90 to-slate-950/90 backdrop-blur-md border ${isEditMode ? 'border-pink-500 animate-pulse' : 'border-purple-500/30 hover:border-purple-500'} p-4 rounded-3xl flex flex-col justify-between items-center text-center shadow-xl transition active:scale-95 cursor-pointer h-32`;
                 
                 if (isEditMode) {
                     card.onclick = () => abrirEdicao(audio.id);
                     card.innerHTML = `
-                        <div class="absolute top-2 right-2 bg-pink-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-black shadow-md">✏️</div>
+                        <div class="absolute top-2 right-2 bg-pink-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-black">✏️</div>
                         <div class="text-2xl mt-1">🎛️</div>
                         <span class="font-bold text-xs text-pink-300 line-clamp-2 px-1">${audio.name}</span>
-                        <span class="text-[10px] text-slate-300 font-black bg-pink-950/80 border border-pink-500/50 px-2.5 py-0.5 rounded-full">EDITAR</span>
+                        <span class="text-[10px] text-slate-300 font-black bg-pink-950/80 px-2.5 py-0.5 rounded-full">EDITAR</span>
                     `;
                 } else {
-                    card.onclick = () => tocarAudio(audio.url);
+                    card.onclick = () => dispararAudioServer(audio.url);
                     card.innerHTML = `
-                        <div class="text-3xl mt-1 filter drop-shadow-[0_0_8px_rgba(168,85,247,0.6)]">🔊</div>
+                        <div class="text-3xl mt-1">🔊</div>
                         <span class="font-bold text-xs text-slate-100 line-clamp-2 px-1">${audio.name}</span>
-                        <div class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white py-1.5 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-md transition">
-                            ▶ DISPARAR
-                        </div>
+                        <div class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-1.5 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-md">▶ DISPARAR</div>
                     `;
                 }
                 grid.appendChild(card);
             });
         }
 
-        function tocarAudio(url) {
-            const audio = new Audio(url);
-            audio.volume = masterVolume;
-            audio.play().catch(e => console.log("Erro ao tocar:", e));
-        }
-
-        function changeVolume(val) {
-            masterVolume = parseFloat(val);
-            const percent = Math.round(masterVolume * 100);
-            document.getElementById('vol-text').innerText = percent + '%';
-            document.getElementById('vol-icon').innerText = percent === 0 ? '🔇' : percent < 50 ? '🔉' : '🔊';
+        // Avisa o servidor para tocar em todos os conectados (incluindo o OBS)
+        function dispararAudioServer(url) {
+            socket.emit('tocar-audio', url);
         }
 
         function toggleEditMode() {
             isEditMode = !isEditMode;
-            const btn = document.getElementById('btn-edit');
-            if (isEditMode) {
-                btn.className = "bg-pink-600 text-white border border-pink-400 p-2.5 rounded-xl transition shadow-lg shadow-pink-600/50";
-            } else {
-                btn.className = "bg-slate-800/80 hover:bg-slate-700 border border-slate-700 p-2.5 rounded-xl transition text-slate-300 shadow-md";
-            }
             renderGrid();
         }
 
         function toggleMenu(show) {
             const menu = document.getElementById('side-menu');
             const overlay = document.getElementById('menu-overlay');
-            if (show) {
-                menu.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-            } else {
-                menu.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            }
+            menu.classList.toggle('-translate-x-full', !show);
+            overlay.classList.toggle('hidden', !show);
         }
 
         async function salvarTitulo() {
             const newTitle = document.getElementById('input-app-title').value || 'Pandinha Deck';
-            await fetch('/api/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ title: newTitle })
-            });
-            document.getElementById('app-title-display').innerText = newTitle;
-            document.getElementById('page-title').innerText = newTitle;
+            await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: newTitle }) });
+            carregarTudo();
             toggleMenu(false);
         }
 
         async function salvarWallpaperArquivo() {
             const fileInput = document.getElementById('bg-file-input').files[0];
-            if (!fileInput) {
-                alert('Selecione uma imagem primeiro.');
-                return;
-            }
-
+            if (!fileInput) return;
             const formData = new FormData();
             formData.append('backgroundFile', fileInput);
-
-            const res = await fetch('/api/settings', { method: 'POST', body: formData });
-            if (res.ok) {
-                carregarTudo();
-                toggleMenu(false);
-            } else {
-                alert('Erro ao enviar imagem de fundo.');
-            }
+            await fetch('/api/settings', { method: 'POST', body: formData });
+            carregarTudo();
+            toggleMenu(false);
         }
 
         async function salvarWallpaperLink() {
             const bgUrl = document.getElementById('input-bg-url').value;
             if (!bgUrl) return;
-
-            await fetch('/api/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ backgroundUrl: bgUrl })
-            });
+            await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ backgroundUrl: bgUrl }) });
             carregarTudo();
             toggleMenu(false);
         }
 
         async function removerWallpaper() {
-            await fetch('/api/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ backgroundUrl: '' })
-            });
+            await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ backgroundUrl: '' }) });
             carregarTudo();
             toggleMenu(false);
         }
@@ -323,20 +231,11 @@
 
         async function salvarAudio(e) {
             e.preventDefault();
-            const name = document.getElementById('audio-name').value;
-            const fileInput = document.getElementById('audio-file').files[0];
-
             const formData = new FormData();
-            formData.append('name', name);
-            formData.append('audio', fileInput);
-
+            formData.append('name', document.getElementById('audio-name').value);
+            formData.append('audio', document.getElementById('audio-file').files[0]);
             const res = await fetch('/api/audios', { method: 'POST', body: formData });
-            if (res.ok) {
-                openModal(false);
-                carregarTudo();
-            } else {
-                alert('Erro ao salvar o áudio.');
-            }
+            if (res.ok) { openModal(false); carregarTudo(); }
         }
 
         function abrirEdicao(id) {
@@ -347,32 +246,26 @@
             document.getElementById('modal-edit').classList.remove('hidden');
         }
 
-        function closeEditModal() {
-            document.getElementById('modal-edit').classList.add('hidden');
-        }
+        function closeEditModal() { document.getElementById('modal-edit').classList.add('hidden'); }
 
         async function salvarEdicaoItem() {
             const id = document.getElementById('edit-id').value;
-            const newName = document.getElementById('edit-name').value;
             const audio = audiosList.find(a => a.id === id);
-            if (audio) audio.name = newName;
-
+            if (audio) audio.name = document.getElementById('edit-name').value;
             await salvarOrdemOuDados();
             closeEditModal();
             renderGrid();
         }
 
-        async function moverAudio(direcao) {
+        async function moverAudio(dir) {
             const id = document.getElementById('edit-id').value;
             const index = audiosList.findIndex(a => a.id === id);
-            const novoIndex = index + direcao;
-
+            const novoIndex = index + dir;
             if (novoIndex >= 0 && novoIndex < audiosList.length) {
                 const temp = audiosList[index];
                 audiosList[index] = audiosList[novoIndex];
                 audiosList.splice(index, 1);
                 audiosList.splice(novoIndex, 0, temp);
-                
                 await salvarOrdemOuDados();
                 renderGrid();
             }
@@ -380,23 +273,13 @@
 
         async function deletarAudioAtual() {
             const id = document.getElementById('edit-id').value;
-            if (!confirm('Deseja realmente apagar este áudio?')) return;
-
+            if (!confirm('Excluir áudio?')) return;
             const res = await fetch(`/api/audios/${id}`, { method: 'DELETE' });
-            if (res.ok) {
-                closeEditModal();
-                carregarTudo();
-            } else {
-                alert('Erro ao apagar áudio.');
-            }
+            if (res.ok) { closeEditModal(); carregarTudo(); }
         }
 
         async function salvarOrdemOuDados() {
-            await fetch('/api/audios', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(audiosList)
-            });
+            await fetch('/api/audios', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(audiosList) });
         }
 
         carregarTudo();
