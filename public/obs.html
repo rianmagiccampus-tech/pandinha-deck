@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>OBS Audio Receiver</title>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body style="background: transparent; margin: 0; overflow: hidden;">
+    <script>
+        const socket = io();
+
+        // Quando receber o aviso do servidor que um botão foi apertado no celular
+        socket.on('disparar-som', (audioUrl) => {
+            const audio = new Audio(audioUrl);
+            audio.volume = 1.0;
+            audio.play().catch(err => console.log("Erro ao reproduzir no OBS:", err));
+        });
+    </script>
+</body>
+</html>
