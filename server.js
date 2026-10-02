@@ -1,9 +1,14 @@
 const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+
 const PORT = process.env.PORT || 3000;
 
 const uploadDir = path.join(__dirname, 'public', 'uploads');
@@ -36,6 +41,11 @@ const upload = multer({ storage: storage });
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(uploadDir));
+
+// Rota especial para o OBS abrir
+app.get('/obs', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'obs.html'));
+});
 
 // Rotas de Áudios
 app.get('/api/audios', (req, res) => {
@@ -92,7 +102,7 @@ app.delete('/api/audios/:id', (req, res) => {
     }
 });
 
-// Rotas de Configurações (Título e Papel de Parede por Upload ou Link)
+// Configurações
 app.get('/api/settings', (req, res) => {
     try {
         const settings = fs.readFileSync(settingsFile, 'utf8');
@@ -105,17 +115,12 @@ app.get('/api/settings', (req, res) => {
 app.post('/api/settings', upload.single('backgroundFile'), (req, res) => {
     try {
         const settings = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
-        
-        if (req.body.title) {
-            settings.title = req.body.title;
-        }
-
+        if (req.body.title) settings.title = req.body.title;
         if (req.file) {
             settings.background = `/uploads/${req.file.filename}`;
         } else if (req.body.backgroundUrl !== undefined) {
             settings.background = req.body.backgroundUrl;
         }
-
         fs.writeFileSync(settingsFile, JSON.stringify(settings, null, 2));
         res.json({ success: true, settings });
     } catch (err) {
@@ -123,6 +128,14 @@ app.post('/api/settings', upload.single('backgroundFile'), (req, res) => {
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Pandinha Deck atualizado rodando na porta ${PORT}`);
+// Comunicação em tempo real via Socket.io
+io.on('connection', (socket) => {
+    socket.on('tocar-audio', (audioUrl) => {
+        // Envia o comando para todos conectados (incluindo o OBS)
+        io.emit('disparar-som', audioUrl);
+    });
+});
+
+server.listen(PORT, () => {
+    console.log(`Pandinha Deck Realtime rodando na porta ${PORT}`);
 });
