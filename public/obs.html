@@ -10,24 +10,57 @@
         Pandinha Deck OBS Conectado 🐼
     </div>
     
-    <!-- Elemento de áudio fixo no HTML para burlar o bloqueio do navegador -->
     <audio id="audio-player"></audio>
 
     <script>
         const socket = io();
         const player = document.getElementById('audio-player');
+        let currentVolume = 1.0;
+
+        // Puxa o volume inicial configurado
+        fetch('/api/settings')
+            .then(res => res.json())
+            .then(data => {
+                if (data.volume !== undefined) {
+                    currentVolume = data.volume / 100;
+                }
+            });
 
         socket.on('connect', () => {
             console.log("Conectado ao servidor de tempo real!");
         });
 
-        // Quando o botão for apertado no telemóvel
-        socket.on('disparar-som', (audioUrl) => {
-            player.src = audioUrl;
-            player.volume = 1.0;
-            player.play().catch(err => {
-                console.log("Bloqueio de autoplay detetado. A tentar forçar reprodução...", err);
-            });
+        // Ouve alteração de configurações (caso o volume seja alterado no celular)
+        socket.on('disparar-som', (data) => {
+            let audioUrl = '';
+            let isLoop = false;
+
+            if (typeof data === 'string') {
+                audioUrl = data;
+            } else {
+                audioUrl = data.url;
+                isLoop = data.loop;
+            }
+
+            // Puxa atualizado o volume mais recente antes de tocar
+            fetch('/api/settings')
+                .then(res => res.json())
+                .then(settings => {
+                    if (settings.volume !== undefined) {
+                        currentVolume = settings.volume / 100;
+                    }
+                    player.volume = currentVolume;
+                    player.loop = isLoop;
+                    player.src = audioUrl;
+                    player.play().catch(err => {
+                        console.log("Bloqueio de autoplay detetado. A tentar forçar reprodução...", err);
+                    });
+                }).catch(() => {
+                    player.volume = currentVolume;
+                    player.loop = isLoop;
+                    player.src = audioUrl;
+                    player.play();
+                });
         });
     </script>
 </body>
