@@ -69,16 +69,23 @@
     </header>
 
     <main class="flex-1 max-w-md mx-auto w-full p-4 space-y-4">
-        <!-- Controle de Volume Geral -->
-        <div class="bg-slate-900/80 backdrop-blur-md border border-purple-500/30 p-4 rounded-3xl shadow-xl flex items-center gap-4">
-            <span class="text-sm">🔊</span>
-            <div class="flex-1">
-                <div class="flex justify-between items-center mb-1">
-                    <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">Volume Geral</span>
-                    <span id="volumeValue" class="text-xs font-bold text-pink-400">100%</span>
+        <!-- Controle de Volume e Botão STOP Geral -->
+        <div class="bg-slate-900/80 backdrop-blur-md border border-purple-500/30 p-4 rounded-3xl shadow-xl space-y-3">
+            <div class="flex items-center gap-4">
+                <span class="text-sm">🔊</span>
+                <div class="flex-1">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">Volume Geral</span>
+                        <span id="volumeValue" class="text-xs font-bold text-pink-400">100%</span>
+                    </div>
+                    <input type="range" id="volumeSlider" min="0" max="100" value="100" class="w-full accent-pink-500 cursor-pointer" oninput="updateVolume(this.value)">
                 </div>
-                <input type="range" id="volumeSlider" min="0" max="100" value="100" class="w-full accent-pink-500 cursor-pointer" oninput="updateVolume(this.value)">
             </div>
+            
+            <!-- Botão de Parar Tudo -->
+            <button onclick="pararTudo()" class="w-full bg-gradient-to-r from-red-600 to-rose-600 hover:opacity-95 text-white py-2.5 rounded-2xl font-black text-xs tracking-widest uppercase shadow-lg shadow-red-900/40 transition active:scale-95 border border-red-400/30 flex items-center justify-center gap-2">
+                <span>⏹</span> PARAR TODOS OS ÁUDIOS
+            </button>
         </div>
 
         <div id="grid-audios" class="grid grid-cols-2 gap-4"></div>
@@ -112,7 +119,7 @@
     <!-- Modal de Edição -->
     <div id="modal-edit" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900/95 border border-pink-500/40 w-full max-w-sm p-6 rounded-3xl shadow-2xl space-y-4 neon-glow-active">
-            <h2 class="text-xl font-black text-pink-400">✏️️ Editar Botão</h2>
+            <h2 class="text-xl font-black text-pink-400">✏ Editar Botão</h2>
             <input type="hidden" id="edit-id">
             <div class="space-y-3">
                 <div>
@@ -204,6 +211,10 @@
 
         function dispararAudioServer(audio) {
             socket.emit('tocar-audio', { url: audio.url, loop: audio.loop || false });
+        }
+
+        function pararTudo() {
+            socket.emit('parar-audios');
         }
 
         async function updateVolume(val) {
