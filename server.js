@@ -33,7 +33,7 @@ async function getAppData() {
         .single();
     
     if (error || !data) {
-        return { title: 'Pandinha Deck', background: '', audios: [] };
+        return { title: 'Pandinha Deck', background: '', volume: 100, audios: [] };
     }
     return data.data;
 }
@@ -57,13 +57,18 @@ app.get('/api/audios', async (req, res) => {
 
 app.post('/api/audios', async (req, res) => {
     try {
-        const { name, audioData } = req.body;
+        const { name, audioData, loop } = req.body;
         if (!audioData) return res.status(400).json({ error: 'Nenhum arquivo enviado.' });
 
         const appData = await getAppData();
         if (!appData.audios) appData.audios = [];
 
-        const newAudio = { id: Date.now().toString(), name: name || 'Áudio', url: audioData };
+        const newAudio = { 
+            id: Date.now().toString(), 
+            name: name || 'Áudio', 
+            url: audioData, 
+            loop: loop || false 
+        };
         appData.audios.push(newAudio);
 
         await saveAppData(appData);
@@ -103,23 +108,28 @@ app.delete('/api/audios/:id', async (req, res) => {
     }
 });
 
-// Configurações
+// Configurações (Incluindo Volume Geral)
 app.get('/api/settings', async (req, res) => {
     try {
         const appData = await getAppData();
-        res.json({ title: appData.title || 'Pandinha Deck', background: appData.background || '' });
+        res.json({ 
+            title: appData.title || 'Pandinha Deck', 
+            background: appData.background || '', 
+            volume: appData.volume !== undefined ? appData.volume : 100 
+        });
     } catch (err) {
-        res.json({ title: 'Pandinha Deck', background: '' });
+        res.json({ title: 'Pandinha Deck', background: '', volume: 100 });
     }
 });
 
 app.post('/api/settings', async (req, res) => {
     try {
         const appData = await getAppData();
-        const { title, backgroundUrl } = req.body;
+        const { title, backgroundUrl, volume } = req.body;
 
         if (title !== undefined) appData.title = title;
         if (backgroundUrl !== undefined) appData.background = backgroundUrl;
+        if (volume !== undefined) appData.volume = volume;
 
         await saveAppData(appData);
         res.json({ success: true, settings: appData });
@@ -129,11 +139,11 @@ app.post('/api/settings', async (req, res) => {
 });
 
 io.on('connection', (socket) => {
-    socket.on('tocar-audio', (audioUrl) => {
-        io.emit('disparar-som', audioUrl);
+    socket.on('tocar-audio', (audioData) => {
+        io.emit('disparar-som', audioData);
     });
 });
 
 server.listen(PORT, () => {
-    console.log(`Pandinha Deck com Supabase rodando na porta ${PORT}`);
+    console.log(`Pandinha Deck Pro rodando na porta ${PORT}`);
 });
