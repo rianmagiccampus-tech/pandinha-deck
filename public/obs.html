@@ -17,58 +17,67 @@
         const player = document.getElementById('audio-player');
         let currentVolume = 1.0;
 
+        // Puxa o volume inicial do servidor
         fetch('/api/settings')
             .then(res => res.json())
             .then(data => {
                 if (data.volume !== undefined) {
                     currentVolume = data.volume / 100;
                 }
-            });
+            }).catch(() => {});
 
         socket.on('connect', () => {
             console.log("Conectado ao servidor de tempo real!");
         });
 
+        // Quando o botão for apertado no celular
         socket.on('disparar-som', (data) => {
             let audioUrl = '';
             let isLoop = false;
 
+            // Compatibilidade total (aceita texto simples ou objeto)
             if (typeof data === 'string') {
                 audioUrl = data;
-            } else {
+            } else if (data && data.url) {
                 audioUrl = data.url;
-                isLoop = data.loop;
+                isLoop = !!data.loop;
             }
 
+            if (!audioUrl) return;
+
+            // Busca o volume mais atualizado antes de dar play
             fetch('/api/settings')
                 .then(res => res.json())
                 .then(settings => {
                     if (settings.volume !== undefined) {
                         currentVolume = settings.volume / 100;
                     }
-                    player.pause();
-                    player.currentTime = 0;
-                    player.volume = currentVolume;
-                    player.loop = isLoop;
-                    player.src = audioUrl;
-                    player.play().catch(err => {
-                        console.log("Erro ao reproduzir:", err);
-                    });
+                    executarAudio(audioUrl, isLoop);
                 }).catch(() => {
-                    player.pause();
-                    player.currentTime = 0;
-                    player.volume = currentVolume;
-                    player.loop = isLoop;
-                    player.src = audioUrl;
-                    player.play();
+                    executarAudio(audioUrl, isLoop);
                 });
         });
 
-        // Comando para cortar o som imediatamente
+        function executarAudio(url, loop) {
+            player.pause();
+            player.currentTime = 0;
+            player.src = url;
+            player.volume = currentVolume;
+            player.loop = loop;
+            
+            player.play().then(() => {
+                console.log("Áudio tocando com sucesso!");
+            }).catch(err => {
+                console.log("Bloqueio de autoplay detetado. Interaja com a fonte no OBS:", err);
+            });
+        }
+
+        // Comando para parar todos os sons imediatamente
         socket.on('parar-som', () => {
             player.pause();
             player.currentTime = 0;
             player.src = '';
+            console.log("Todos os áudios foram parados.");
         });
     </script>
 </body>
