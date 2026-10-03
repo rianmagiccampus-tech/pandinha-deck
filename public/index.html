@@ -68,10 +68,23 @@
         </div>
     </header>
 
-    <main class="flex-1 max-w-md mx-auto w-full p-4">
+    <main class="flex-1 max-w-md mx-auto w-full p-4 space-y-4">
+        <!-- Controle de Volume Geral -->
+        <div class="bg-slate-900/80 backdrop-blur-md border border-purple-500/30 p-4 rounded-3xl shadow-xl flex items-center gap-4">
+            <span class="text-sm">🔊</span>
+            <div class="flex-1">
+                <div class="flex justify-between items-center mb-1">
+                    <span class="text-xs font-bold text-purple-300 uppercase tracking-wider">Volume Geral</span>
+                    <span id="volumeValue" class="text-xs font-bold text-pink-400">100%</span>
+                </div>
+                <input type="range" id="volumeSlider" min="0" max="100" value="100" class="w-full accent-pink-500 cursor-pointer" oninput="updateVolume(this.value)">
+            </div>
+        </div>
+
         <div id="grid-audios" class="grid grid-cols-2 gap-4"></div>
     </main>
 
+    <!-- Modal de Cadastro -->
     <div id="modal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900/95 border border-purple-500/40 w-full max-w-sm p-6 rounded-3xl shadow-2xl space-y-4 neon-glow">
             <h2 class="text-xl font-black text-purple-300 flex items-center gap-2">🎵 Novo Áudio</h2>
@@ -84,6 +97,10 @@
                     <label class="block text-xs font-bold text-slate-400 mb-1 uppercase tracking-wider">Arquivo de Áudio (.mp3 / .wav)</label>
                     <input type="file" id="audio-file" accept="audio/*" required class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-2.5 text-slate-400 text-xs file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-black file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer">
                 </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="audio-loop" class="w-4 h-4 accent-pink-500 rounded cursor-pointer">
+                    <label for="audio-loop" class="text-xs font-bold text-slate-300 cursor-pointer">Tocar em Loop (Repetir sem parar)</label>
+                </div>
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="openModal(false)" class="flex-1 bg-slate-800 py-3 rounded-2xl font-bold text-sm">Cancelar</button>
                     <button type="submit" id="btn-salvar-audio" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-2xl font-bold text-sm shadow-lg">Salvar</button>
@@ -92,6 +109,7 @@
         </div>
     </div>
 
+    <!-- Modal de Edição -->
     <div id="modal-edit" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900/95 border border-pink-500/40 w-full max-w-sm p-6 rounded-3xl shadow-2xl space-y-4 neon-glow-active">
             <h2 class="text-xl font-black text-pink-400">✏️ Editar Botão</h2>
@@ -100,6 +118,10 @@
                 <div>
                     <label class="block text-xs font-bold text-slate-400 mb-1 uppercase">Novo Nome</label>
                     <input type="text" id="edit-name" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-white focus:outline-none focus:border-pink-500 font-medium">
+                </div>
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="edit-loop" class="w-4 h-4 accent-pink-500 rounded cursor-pointer">
+                    <label for="edit-loop" class="text-xs font-bold text-slate-300 cursor-pointer">Tocar em Loop (Repetir)</label>
                 </div>
                 <div class="grid grid-cols-2 gap-2 pt-2">
                     <button type="button" onclick="moverAudio(-1)" class="bg-slate-800 py-2.5 rounded-xl font-bold text-xs">⬅️ Mover Esq</button>
@@ -126,12 +148,19 @@
                 document.getElementById('app-title-display').innerText = settings.title;
                 document.getElementById('page-title').innerText = settings.title;
                 document.getElementById('input-app-title').value = settings.title;
+                
+                if (settings.volume !== undefined) {
+                    document.getElementById('volumeSlider').value = settings.volume;
+                    document.getElementById('volumeValue').innerText = settings.volume + '%';
+                }
+
                 if(settings.background) {
                     document.getElementById('bg-container').style.backgroundImage = `url('${settings.background}')`;
                     document.getElementById('input-bg-url').value = settings.background;
                 } else {
                     document.getElementById('bg-container').style.backgroundImage = 'none';
                 }
+
                 const resAud = await fetch('/api/audios');
                 audiosList = await resAud.json();
                 renderGrid();
@@ -149,18 +178,22 @@
                 const card = document.createElement('div');
                 card.className = `relative bg-gradient-to-b from-slate-900/90 to-slate-950/90 backdrop-blur-md border ${isEditMode ? 'border-pink-500 animate-pulse' : 'border-purple-500/30 hover:border-purple-500'} p-4 rounded-3xl flex flex-col justify-between items-center text-center shadow-xl transition active:scale-95 cursor-pointer h-32`;
                 
+                const loopBadge = audio.loop ? '<span class="absolute top-2 left-2 text-[9px] bg-pink-950/90 text-pink-300 font-black px-2 py-0.5 rounded-full border border-pink-500/30">LOOP</span>' : '';
+
                 if (isEditMode) {
                     card.onclick = () => abrirEdicao(audio.id);
                     card.innerHTML = `
-                        <div class="absolute top-2 right-2 bg-pink-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-black">✏️️</div>
-                        <div class="text-2xl mt-1">🎛️</div>
+                        ${loopBadge}
+                        <div class="absolute top-2 right-2 bg-pink-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-black">✏</div>
+                        <div class="text-2xl mt-4">🎛️</div>
                         <span class="font-bold text-xs text-pink-300 line-clamp-2 px-1">${audio.name}</span>
                         <span class="text-[10px] text-slate-300 font-black bg-pink-950/80 px-2.5 py-0.5 rounded-full">EDITAR</span>
                     `;
                 } else {
-                    card.onclick = () => dispararAudioServer(audio.url);
+                    card.onclick = () => dispararAudioServer(audio);
                     card.innerHTML = `
-                        <div class="text-3xl mt-1">🔊</div>
+                        ${loopBadge}
+                        <div class="text-3xl mt-4">🔊</div>
                         <span class="font-bold text-xs text-slate-100 line-clamp-2 px-1">${audio.name}</span>
                         <div class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-1.5 rounded-xl font-black text-[10px] tracking-widest uppercase shadow-md">▶ DISPARAR</div>
                     `;
@@ -169,8 +202,17 @@
             });
         }
 
-        function dispararAudioServer(url) {
-            socket.emit('tocar-audio', url);
+        function dispararAudioServer(audio) {
+            socket.emit('tocar-audio', { url: audio.url, loop: audio.loop || false });
+        }
+
+        async function updateVolume(val) {
+            document.getElementById('volumeValue').innerText = val + '%';
+            await fetch('/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ volume: parseInt(val) })
+            });
         }
 
         function toggleEditMode() {
@@ -207,13 +249,15 @@
 
         function openModal(show) {
             document.getElementById('modal').classList.toggle('hidden', !show);
-            if(show) document.getElementById('form-audio').reset();
+            if(show) {
+                document.getElementById('form-audio').reset();
+            }
         }
 
-        // Converte o arquivo para Base64 seguro para nunca apagar
         async function salvarAudio(e) {
             e.preventDefault();
             const name = document.getElementById('audio-name').value;
+            const loop = document.getElementById('audio-loop').checked;
             const fileInput = document.getElementById('audio-file').files[0];
             if (!fileInput) return;
 
@@ -227,7 +271,7 @@
                 const res = await fetch('/api/audios', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ name, audioData })
+                    body: JSON.stringify({ name, audioData, loop })
                 });
 
                 btn.innerText = 'Salvar';
@@ -248,6 +292,7 @@
             if (!audio) return;
             document.getElementById('edit-id').value = audio.id;
             document.getElementById('edit-name').value = audio.name;
+            document.getElementById('edit-loop').checked = audio.loop || false;
             document.getElementById('modal-edit').classList.remove('hidden');
         }
 
@@ -256,7 +301,10 @@
         async function salvarEdicaoItem() {
             const id = document.getElementById('edit-id').value;
             const audio = audiosList.find(a => a.id === id);
-            if (audio) audio.name = document.getElementById('edit-name').value;
+            if (audio) {
+                audio.name = document.getElementById('edit-name').value;
+                audio.loop = document.getElementById('edit-loop').checked;
+            }
             await salvarOrdemOuDados();
             closeEditModal();
             renderGrid();
