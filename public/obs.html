@@ -15,69 +15,41 @@
     <script>
         const socket = io();
         const player = document.getElementById('audio-player');
-        let currentVolume = 1.0;
-
-        // Puxa o volume inicial do servidor
-        fetch('/api/settings')
-            .then(res => res.json())
-            .then(data => {
-                if (data.volume !== undefined) {
-                    currentVolume = data.volume / 100;
-                }
-            }).catch(() => {});
 
         socket.on('connect', () => {
-            console.log("Conectado ao servidor de tempo real!");
+            console.log("Conectado ao servidor!");
         });
 
-        // Quando o botão for apertado no celular
         socket.on('disparar-som', (data) => {
-            let audioUrl = '';
-            let isLoop = false;
-
-            // Compatibilidade total (aceita texto simples ou objeto)
-            if (typeof data === 'string') {
-                audioUrl = data;
-            } else if (data && data.url) {
-                audioUrl = data.url;
-                isLoop = !!data.loop;
-            }
+            let audioUrl = typeof data === 'string' ? data : (data ? data.url : '');
+            let isLoop = data && data.loop ? true : false;
 
             if (!audioUrl) return;
 
-            // Busca o volume mais atualizado antes de dar play
+            player.pause();
+            player.currentTime = 0;
+            player.src = audioUrl;
+            player.loop = isLoop;
+            
+            // Pega o volume atual do sistema ou deixa no máximo
             fetch('/api/settings')
                 .then(res => res.json())
                 .then(settings => {
-                    if (settings.volume !== undefined) {
-                        currentVolume = settings.volume / 100;
-                    }
-                    executarAudio(audioUrl, isLoop);
-                }).catch(() => {
-                    executarAudio(audioUrl, isLoop);
-                });
+                    player.volume = settings.volume !== undefined ? settings.volume / 100 : 1.0;
+                })
+                .catch(() => { player.volume = 1.0; });
+
+            player.play().then(() => {
+                console.log("Tocando áudio!");
+            }).catch(err => {
+                console.log("Erro de autoplay. Interaja com a fonte no OBS:", err);
+            });
         });
 
-        function executarAudio(url, loop) {
-            player.pause();
-            player.currentTime = 0;
-            player.src = url;
-            player.volume = currentVolume;
-            player.loop = loop;
-            
-            player.play().then(() => {
-                console.log("Áudio tocando com sucesso!");
-            }).catch(err => {
-                console.log("Bloqueio de autoplay detetado. Interaja com a fonte no OBS:", err);
-            });
-        }
-
-        // Comando para parar todos os sons imediatamente
         socket.on('parar-som', () => {
             player.pause();
             player.currentTime = 0;
             player.src = '';
-            console.log("Todos os áudios foram parados.");
         });
     </script>
 </body>
