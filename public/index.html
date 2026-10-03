@@ -36,16 +36,10 @@
             </div>
 
             <div class="space-y-3 pt-2 border-t border-slate-800">
-                <label class="block text-xs font-bold text-purple-300 uppercase tracking-wider">Papel de Parede</label>
-                <div class="space-y-1.5">
-                    <span class="text-[11px] text-slate-400 font-medium">Enviar imagem do dispositivo:</span>
-                    <input type="file" id="bg-file-input" accept="image/*" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2 text-slate-400 text-xs file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-black file:bg-purple-600 file:text-white hover:file:bg-purple-500 cursor-pointer">
-                    <button onclick="salvarWallpaperArquivo()" class="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:opacity-90 py-2.5 rounded-xl font-black text-xs shadow-lg shadow-purple-600/30 transition">Aplicar Imagem Enviada</button>
-                </div>
-                <div class="text-center text-[10px] text-slate-500 uppercase font-bold my-1">— OU VIA LINK —</div>
+                <label class="block text-xs font-bold text-purple-300 uppercase tracking-wider">Papel de Parede (Link de Imagem)</label>
                 <div class="space-y-1.5">
                     <input type="text" id="input-bg-url" placeholder="https://exemplo.com/imagem.jpg" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-xs text-white focus:outline-none focus:border-purple-500 font-medium">
-                    <button onclick="salvarWallpaperLink()" class="w-full bg-slate-800 hover:bg-slate-700 py-2.5 rounded-xl font-bold text-xs text-purple-300 border border-purple-500/30">Aplicar por Link</button>
+                    <button onclick="salvarWallpaperLink()" class="w-full bg-purple-600 hover:bg-purple-500 py-2.5 rounded-xl font-bold text-xs text-white">Aplicar Wallpaper</button>
                 </div>
                 <button onclick="removerWallpaper()" class="w-full bg-red-600/10 hover:bg-red-600 text-red-400 hover:text-white py-2 rounded-xl font-bold text-xs border border-red-500/20 transition mt-2">Remover Papel de Parede</button>
             </div>
@@ -78,7 +72,6 @@
         <div id="grid-audios" class="grid grid-cols-2 gap-4"></div>
     </main>
 
-    <!-- Modais de Cadastro e Edição (mesma estrutura anterior) -->
     <div id="modal" class="fixed inset-0 bg-black/85 backdrop-blur-md hidden flex items-center justify-center p-4 z-50">
         <div class="bg-slate-900/95 border border-purple-500/40 w-full max-w-sm p-6 rounded-3xl shadow-2xl space-y-4 neon-glow">
             <h2 class="text-xl font-black text-purple-300 flex items-center gap-2">🎵 Novo Áudio</h2>
@@ -93,7 +86,7 @@
                 </div>
                 <div class="flex gap-2 pt-2">
                     <button type="button" onclick="openModal(false)" class="flex-1 bg-slate-800 py-3 rounded-2xl font-bold text-sm">Cancelar</button>
-                    <button type="submit" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-2xl font-bold text-sm shadow-lg">Salvar</button>
+                    <button type="submit" id="btn-salvar-audio" class="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 py-3 rounded-2xl font-bold text-sm shadow-lg">Salvar</button>
                 </div>
             </form>
         </div>
@@ -135,7 +128,7 @@
                 document.getElementById('input-app-title').value = settings.title;
                 if(settings.background) {
                     document.getElementById('bg-container').style.backgroundImage = `url('${settings.background}')`;
-                    document.getElementById('input-bg-url').value = settings.background.startsWith('http') ? settings.background : '';
+                    document.getElementById('input-bg-url').value = settings.background;
                 } else {
                     document.getElementById('bg-container').style.backgroundImage = 'none';
                 }
@@ -159,7 +152,7 @@
                 if (isEditMode) {
                     card.onclick = () => abrirEdicao(audio.id);
                     card.innerHTML = `
-                        <div class="absolute top-2 right-2 bg-pink-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-black">✏️</div>
+                        <div class="absolute top-2 right-2 bg-pink-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-black">✏️️</div>
                         <div class="text-2xl mt-1">🎛️</div>
                         <span class="font-bold text-xs text-pink-300 line-clamp-2 px-1">${audio.name}</span>
                         <span class="text-[10px] text-slate-300 font-black bg-pink-950/80 px-2.5 py-0.5 rounded-full">EDITAR</span>
@@ -176,7 +169,6 @@
             });
         }
 
-        // Avisa o servidor para tocar em todos os conectados (incluindo o OBS)
         function dispararAudioServer(url) {
             socket.emit('tocar-audio', url);
         }
@@ -200,19 +192,8 @@
             toggleMenu(false);
         }
 
-        async function salvarWallpaperArquivo() {
-            const fileInput = document.getElementById('bg-file-input').files[0];
-            if (!fileInput) return;
-            const formData = new FormData();
-            formData.append('backgroundFile', fileInput);
-            await fetch('/api/settings', { method: 'POST', body: formData });
-            carregarTudo();
-            toggleMenu(false);
-        }
-
         async function salvarWallpaperLink() {
             const bgUrl = document.getElementById('input-bg-url').value;
-            if (!bgUrl) return;
             await fetch('/api/settings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ backgroundUrl: bgUrl }) });
             carregarTudo();
             toggleMenu(false);
@@ -229,13 +210,37 @@
             if(show) document.getElementById('form-audio').reset();
         }
 
+        // Converte o arquivo para Base64 seguro para nunca apagar
         async function salvarAudio(e) {
             e.preventDefault();
-            const formData = new FormData();
-            formData.append('name', document.getElementById('audio-name').value);
-            formData.append('audio', document.getElementById('audio-file').files[0]);
-            const res = await fetch('/api/audios', { method: 'POST', body: formData });
-            if (res.ok) { openModal(false); carregarTudo(); }
+            const name = document.getElementById('audio-name').value;
+            const fileInput = document.getElementById('audio-file').files[0];
+            if (!fileInput) return;
+
+            const btn = document.getElementById('btn-salvar-audio');
+            btn.innerText = 'Salvando...';
+            btn.disabled = true;
+
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                const audioData = event.target.result;
+                const res = await fetch('/api/audios', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, audioData })
+                });
+
+                btn.innerText = 'Salvar';
+                btn.disabled = false;
+
+                if (res.ok) {
+                    openModal(false);
+                    carregarTudo();
+                } else {
+                    alert('Erro ao salvar áudio.');
+                }
+            };
+            reader.readAsDataURL(fileInput);
         }
 
         function abrirEdicao(id) {
