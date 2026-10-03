@@ -17,7 +17,6 @@
         const player = document.getElementById('audio-player');
         let currentVolume = 1.0;
 
-        // Puxa o volume inicial configurado
         fetch('/api/settings')
             .then(res => res.json())
             .then(data => {
@@ -30,7 +29,6 @@
             console.log("Conectado ao servidor de tempo real!");
         });
 
-        // Ouve alteração de configurações (caso o volume seja alterado no celular)
         socket.on('disparar-som', (data) => {
             let audioUrl = '';
             let isLoop = false;
@@ -42,25 +40,35 @@
                 isLoop = data.loop;
             }
 
-            // Puxa atualizado o volume mais recente antes de tocar
             fetch('/api/settings')
                 .then(res => res.json())
                 .then(settings => {
                     if (settings.volume !== undefined) {
                         currentVolume = settings.volume / 100;
                     }
+                    player.pause();
+                    player.currentTime = 0;
                     player.volume = currentVolume;
                     player.loop = isLoop;
                     player.src = audioUrl;
                     player.play().catch(err => {
-                        console.log("Bloqueio de autoplay detetado. A tentar forçar reprodução...", err);
+                        console.log("Erro ao reproduzir:", err);
                     });
                 }).catch(() => {
+                    player.pause();
+                    player.currentTime = 0;
                     player.volume = currentVolume;
                     player.loop = isLoop;
                     player.src = audioUrl;
                     player.play();
                 });
+        });
+
+        // Comando para cortar o som imediatamente
+        socket.on('parar-som', () => {
+            player.pause();
+            player.currentTime = 0;
+            player.src = '';
         });
     </script>
 </body>
